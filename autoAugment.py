@@ -189,12 +189,12 @@ def main(args):
                 # cv2.imwrite(caffe_root+'/analysis/lpss-val/'+str(test_num)+'.jpg', query)
 
                 # print add_num each hour
-                if frame_num % 3600 == 0:
-                    print("add %4d images to the data base in the %2dth hour!" % (add_num, frame_num/3600))
+                if frame_num % (6*60*60) == 0:
+                    print("add %4d images to the data base in the %2dth hour!" % (add_num, frame_num/(6*60*60)))
                     add_num = 0
                 cv2.namedWindow('query', 1)
                 cv2.imshow('query', query)
-                cv2.waitKey()
+                cv2.waitKey(30)
     file_train.close()
 
 
