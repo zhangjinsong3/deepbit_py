@@ -1,5 +1,13 @@
-#coding=utf-8
-#加载必要的库
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Sep 29 16:05:38 2017
+
+@author: 01376022
+
+图像检索 deepbit 的 python inference
+
+"""
+
 import numpy as np
 import re
 import sys,os
@@ -47,9 +55,9 @@ def featureExtract(image_path, net):
     image = cv2.resize(im_32F, (256, 256), interpolation=cv2.INTER_AREA)
     # 转换为 3 256 256 结构， 减均值
     tmp = image.astype(np.float32, copy=False).transpose(2, 0, 1)
-    blob = cv2.subtract(tmp, mean_npy.astype(np.float32, copy=False).transpose(0, 2, 1))
+    blob = cv2.subtract(tmp, mean_npy.astype(np.float32, copy=False))
     # crop 224x224 image
-    crop = blob[:, 16:240, 16:240].transpose(0, 2, 1)
+    crop = blob[:, 16:240, 16:240]
 
     # net.blobs['data'].data[...] = transformer.preprocess('data', train_crop)
     net.blobs['data'].data[...] = crop
@@ -75,7 +83,7 @@ mean_npy = binaryproto2npy(mean_file)
 basePath = caffe_root + '/data/lpss/'
 
 train_list_file = basePath + 'train-file-list.txt'
-test_list_file = basePath + 'test-file-list.txt'
+test_list_file = basePath + 'validation/positive.txt'
 train_binary_file = os.path.join(caffe_root, 'python/lpss/train_data.bin')
 ####
 
@@ -122,6 +130,7 @@ for test_path in test_paths:
     query = cv2.resize(cv2.imread(query_path), (224, 224), interpolation=cv2.INTER_AREA)
     if query.shape[2] == 1:
         query = cv2.cvtColor(query, cv2.COLOR_GRAY2BGR)
+    mean_distance = 0
     for i in range(10):
         retrieval = cv2.resize(cv2.imread(caffe_root + train_paths[index[i]]), (224, 224), interpolation=cv2.INTER_AREA)
         if retrieval.shape[2] == 1:
@@ -131,10 +140,21 @@ for test_path in test_paths:
         text = str(distance[i])
         cv2.putText(retrieval, text, (20, 20), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 0, 255), 1)
         query = cv2.hconcat((query, retrieval))
-    cv2.imwrite(caffe_root+'/analysis/lpss-val/'+str(test_num)+'.jpg', query)
-    cv2.namedWindow('query', 1)
-    cv2.imshow('query', query)
-    cv2.waitKey()
+        if i < 3:
+            mean_distance += distance[i]
+    mean_distance = mean_distance / 3
+    if mean_distance > 0.125:
+        if not os.path.exists(caffe_root+'/analysis/lpss-val/positive'):
+            os.makedirs(caffe_root+'/analysis/lpss-val/positive')
+        cv2.imwrite(caffe_root+'/analysis/lpss-val/positive/'+str(test_num)+'.jpg', query)
+    else:
+        if not os.path.exists(caffe_root+'/analysis/lpss-val/negative'):
+            os.makedirs(caffe_root+'/analysis/lpss-val/negative')
+        cv2.imwrite(caffe_root+'/analysis/lpss-val/negative/'+str(test_num)+'.jpg', query)
+    # cv2.imwrite(caffe_root+'/analysis/lpss-val/'+str(test_num)+'.jpg', query)
+    # cv2.namedWindow('query', 1)
+    # cv2.imshow('query', query)
+    # cv2.waitKey()
     test_num += 1
 # np.savetxt(train_binary_file, train_binary)
 file_train.close()
