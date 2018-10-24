@@ -27,10 +27,10 @@ mean_file = caffe_root+'/data/ilsvrc12/imagenet_mean.binaryproto'
 caffe.set_mode_gpu()
 net = caffe.Net(net_file, caffe_model, caffe.TEST)
 # data path
-basePath = '/media/zjs/A638551F3854F033/ImageRetrieval/deepbit'
+basePath = '/media/zjs/A638551F3854F033/ImageRetrieval'
 
-train_list_file = os.path.join(basePath, 'train.txt')
-train_binary_file = os.path.join(basePath, 'train_data.bin')
+train_list_file = os.path.join(basePath, 'deepbit/train.txt')
+train_binary_file = os.path.join(basePath, 'deepbit/train_data.bin')
 ####
 def binaryproto2npy(meanFilePath):
     mean_blob = caffe.proto.caffe_pb2.BlobProto()
@@ -116,7 +116,7 @@ def main(args):
     train_binary = (train_binary > mean_th) + 0
 
     file_train = open(train_list_file, 'r+')
-    train_paths = file_train.read().split('\n')
+    train_paths = file_train.read().split('\n')[:-1]
     # 判断是文件夹中包含多个视频，还是单个视频
     videos_path = []
     video_dir = args.video_dir
@@ -176,10 +176,11 @@ def main(args):
 
                 if mean_distance > 0.125:
                     # 增补此张图片到数据库中
-                    cv2.imwrite(os.path.join(images_save, '%06d.jpg' % frame_num), frame)
+                    new_path = os.path.join(images_save, '%06d.jpg' % frame_num)
+                    cv2.imwrite(new_path, frame)
                     train_binary = np.vstack((train_binary, test_binary))
-                    file_train.write(os.path.join(images_save, '%06d.jpg' % frame_num) + '\n')
-                    train_paths.append(os.path.join(images_save, '%06d.jpg' % frame_num))
+                    file_train.write(new_path.replace(basePath + '/', '') + '\n')
+                    train_paths.append(new_path.replace(basePath + '/', ''))
                     add_num = add_num + 1
                 # else:
                 #     if not os.path.exists(caffe_root + '/analysis/lpss-val/negative'):
